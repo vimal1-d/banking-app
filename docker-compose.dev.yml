@@ -1,0 +1,17 @@
+version: "3.9"
+
+# ══════════════════════════════════════════════════════
+#  Development override — hot reload for backend
+#  Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# ══════════════════════════════════════════════════════
+
+services:
+  backend:
+    # Override with dev target that has nodemon
+    build:
+      target: deps   # Use deps stage which has all packages
+    volumes:
+      - ./backend/src:/app/src:ro   # mount source for hot reload
+    command: ["node_modules/.bin/nodemon", "src/server.js"]
+    environment:
+      NODE_ENV: development

@@ -1,0 +1,126 @@
+# ══════════════════════════════════════════════════════════════════
+#  01-mongodb.yaml — Namespace + MongoDB
+#  Apply: kubectl apply -f k8s/01-mongodb.yaml
+# ══════════════════════════════════════════════════════════════════
+
+# ── Namespace ──────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: banking
+  labels:
+    app.kubernetes.io/name: banking
+
+---
+# ── MongoDB PVC ────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc
+  namespace: banking
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+# ── MongoDB Init ConfigMap ─────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-init-script
+  namespace: banking
+data:
+  init.js: |
+    db = db.getSiblingDB('bankingdb');
+    db.createCollection('users');
+    db.createCollection('accounts');
+    db.createCollection('transactions');
+    db.users.createIndex({ email: 1 }, { unique: true });
+    db.users.createIndex({ accountNumber: 1 }, { unique: true, sparse: true });
+    db.accounts.createIndex({ userId: 1 }, { unique: true });
+    db.transactions.createIndex({ userId: 1, createdAt: -1 });
+    print('✅ bankingdb initialized');
+
+---
+# ── MongoDB Deployment ─────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: banking
+  labels:
+    app: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  strategy:
+    type: Recreate  # PVC = single attachment
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:7.0
+          ports:
+            - containerPort: 27017
+          # FIXED: use env directly, no envFrom (avoids conflict)
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "admin"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: "changeme-in-production"   # ← Run generate-secrets.sh instead
+            - name: MONGO_INITDB_DATABASE
+              value: "bankingdb"
+          volumeMounts:
+            - name: mongo-data
+              mountPath: /data/db
+            - name: mongo-init
+              mountPath: /docker-entrypoint-initdb.d
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            exec:
+              command: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+      volumes:
+        - name: mongo-data
+          persistentVolumeClaim:
+            claimName: mongo-pvc
+        - name: mongo-init
+          configMap:
+            name: mongo-init-script
+
+---
+# ── MongoDB Service ────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+  namespace: banking
+spec:
+  selector:
+    app: mongodb
+  ports:
+    - port: 27017
+      targetPort: 27017
+  clusterIP: None   # Headless service for direct pod communication

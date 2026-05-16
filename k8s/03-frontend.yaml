@@ -1,0 +1,151 @@
+# ══════════════════════════════════════════════════════════════════
+#  03-frontend.yaml — Frontend Nginx Deployment
+# ══════════════════════════════════════════════════════════════════
+
+# ── Nginx K8s Config (uses banking-backend-service) ───────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: banking
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name _;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        gzip on;
+        gzip_types text/plain text/css application/json application/javascript text/javascript;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+            add_header Cache-Control "no-store, no-cache, must-revalidate";
+        }
+
+        # Proxy to K8s backend service
+        location /api/ {
+            proxy_pass         http://banking-backend-service:5000;
+            proxy_http_version 1.1;
+            proxy_set_header   Host              $host;
+            proxy_set_header   X-Real-IP         $remote_addr;
+            proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto $scheme;
+            proxy_read_timeout 60s;
+        }
+
+        location /nginx-health {
+            return 200 "healthy\n";
+            add_header Content-Type text/plain;
+        }
+
+        add_header X-Frame-Options       "SAMEORIGIN"    always;
+        add_header X-Content-Type-Options "nosniff"      always;
+
+        error_page 404 /index.html;
+    }
+
+---
+# ── Frontend Deployment ────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: banking-frontend
+  namespace: banking
+  labels:
+    app: banking-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: banking-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: banking-frontend
+    spec:
+      containers:
+        - name: frontend
+          # ← Jenkins will update this tag automatically
+          image: YOURDOCKERHUBUSER/banking-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          # Mount K8s-specific nginx config (points to banking-backend-service)
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /nginx-health
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /nginx-health
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+
+---
+# ── Frontend Service ───────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: banking-frontend-service
+  namespace: banking
+spec:
+  selector:
+    app: banking-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+  type: LoadBalancer   # Use NodePort for minikube: type: NodePort
+
+---
+# ── Ingress (requires nginx-ingress-controller + cert-manager) ─────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: banking-ingress
+  namespace: banking
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Uncomment when cert-manager ready
+spec:
+  ingressClassName: nginx
+  # tls:                              # Uncomment for HTTPS
+  #   - hosts:
+  #       - banking.yourdomain.com
+  #     secretName: banking-tls
+  rules:
+    - host: banking.yourdomain.com    # ← Change to your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: banking-frontend-service
+                port:
+                  number: 80

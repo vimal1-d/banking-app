@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NovaBanc — Digital Banking</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="noise"></div>
+
+  <!-- NAV -->
+  <nav class="nav" id="main-nav" style="display:none">
+    <div class="nav-logo">NovaBanc</div>
+    <div class="nav-links">
+      <span class="nav-link active" onclick="showDashboard()">Dashboard</span>
+      <span class="nav-link" onclick="showTransfer()">Transfer</span>
+      <span class="nav-link" onclick="showHistory()">History</span>
+    </div>
+    <div class="nav-user">
+      <span id="nav-username" class="nav-username"></span>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- ═══════════ LOGIN PAGE ═══════════ -->
+  <section class="page" id="login-page">
+    <div class="login-split">
+      <div class="login-left">
+        <div class="brand-tag">Est. 2024</div>
+        <h1 class="brand-title">Modern<br/>Banking<br/>Redefined.</h1>
+        <p class="brand-sub">Secure. Simple. Sophisticated.</p>
+        <div class="brand-stats">
+          <div class="stat"><span class="stat-num">2M+</span><span class="stat-label">Customers</span></div>
+          <div class="stat"><span class="stat-num">$4B</span><span class="stat-label">Deposits</span></div>
+          <div class="stat"><span class="stat-num">99.9%</span><span class="stat-label">Uptime</span></div>
+        </div>
+      </div>
+      <div class="login-right">
+        <div class="login-card">
+          <div class="card-header">
+            <h2>Welcome Back</h2>
+            <p>Sign in to your account</p>
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="login-email" placeholder="john@example.com" class="form-input"/>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="login-pass" placeholder="••••••••" class="form-input"
+              onkeypress="if(event.key==='Enter') doLogin()"/>
+          </div>
+          <div class="form-row">
+            <label class="checkbox-wrap"><input type="checkbox" id="remember-me"/> Remember me</label>
+            <span class="link-subtle">Forgot password?</span>
+          </div>
+          <button class="btn-primary" onclick="doLogin()" id="login-btn">Sign In</button>
+          <div class="divider"><span>or</span></div>
+          <button class="btn-secondary" onclick="showRegister()">Create New Account</button>
+          <div id="login-error" class="error-msg"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ REGISTER PAGE ═══════════ -->
+  <section class="page hidden" id="register-page">
+    <div class="auth-center">
+      <div class="login-card wide">
+        <div class="card-header">
+          <h2>Open Your Account</h2>
+          <p>Join 2 million customers today — it's free!</p>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>First Name *</label>
+            <input type="text" id="reg-fname" placeholder="John" class="form-input"/>
+          </div>
+          <div class="form-group">
+            <label>Last Name *</label>
+            <input type="text" id="reg-lname" placeholder="Doe" class="form-input"/>
+          </div>
+          <div class="form-group">
+            <label>Email Address *</label>
+            <input type="email" id="reg-email" placeholder="john@example.com" class="form-input"/>
+          </div>
+          <div class="form-group">
+            <label>Phone Number *</label>
+            <input type="tel" id="reg-phone" placeholder="+91 98765 43210" class="form-input"/>
+          </div>
+          <div class="form-group full">
+            <label>Full Address *</label>
+            <input type="text" id="reg-address" placeholder="123 Main St, Mumbai, Maharashtra" class="form-input"/>
+          </div>
+          <div class="form-group">
+            <label>Password * (min 8 chars)</label>
+            <input type="password" id="reg-pass" placeholder="Min 8 characters" class="form-input"/>
+          </div>
+          <div class="form-group">
+            <label>Account Type</label>
+            <select id="reg-type" class="form-input">
+              <option value="savings">Savings Account</option>
+              <option value="checking">Checking Account</option>
+              <option value="business">Business Account</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="doRegister()" id="reg-btn">Create Account →</button>
+        <button class="btn-ghost" onclick="showLogin()">← Already have an account? Login</button>
+        <div id="reg-message" class="msg-box"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ DASHBOARD PAGE ═══════════ -->
+  <section class="page hidden" id="dashboard-page">
+    <div class="dashboard-wrap">
+
+      <!-- Top greeting -->
+      <div class="dashboard-top">
+        <div class="greeting">
+          <h2>Good morning, <span id="user-name">User</span> 👋</h2>
+          <p>Account: <strong id="user-account-no"></strong></p>
+        </div>
+        <div class="quick-actions">
+          <button class="action-chip" onclick="showTransfer()">⟳ Transfer Money</button>
+          <button class="action-chip" onclick="showHistory()">📋 Full History</button>
+        </div>
+      </div>
+
+      <!-- Balance cards -->
+      <div class="balance-grid">
+        <div class="balance-card primary">
+          <div class="bc-label">Total Balance</div>
+          <div class="bc-amount" id="total-balance">Loading...</div>
+          <div class="bc-trend">↑ Updated just now</div>
+          <div class="bc-deco"></div>
+        </div>
+        <div class="balance-card">
+          <div class="bc-label">Savings</div>
+          <div class="bc-amount" id="savings-balance">--</div>
+          <div class="bc-sub">4.5% APY</div>
+        </div>
+        <div class="balance-card">
+          <div class="bc-label">Checking</div>
+          <div class="bc-amount" id="checking-balance">--</div>
+          <div class="bc-sub">Available now</div>
+        </div>
+      </div>
+
+      <!-- Bottom panels -->
+      <div class="dash-bottom">
+        <!-- Recent transactions -->
+        <div class="transactions-panel">
+          <div class="panel-header">
+            <h3>Recent Transactions</h3>
+            <span class="link-subtle" onclick="showHistory()">View all →</span>
+          </div>
+          <div id="txn-list" class="txn-list">
+            <div class="txn-loading">Loading transactions...</div>
+          </div>
+        </div>
+
+        <!-- Quick transfer widget -->
+        <div class="side-panel">
+          <div class="transfer-widget">
+            <h3>Quick Transfer</h3>
+            <div class="form-group">
+              <label>To Account Number</label>
+              <input type="text" id="q-to" placeholder="e.g. NB12345678" class="form-input sm"/>
+            </div>
+            <div class="form-group">
+              <label>Amount (₹)</label>
+              <input type="number" id="q-amount" placeholder="0.00" min="1" class="form-input sm"/>
+            </div>
+            <div class="form-group">
+              <label>Note (optional)</label>
+              <input type="text" id="q-note" placeholder="Rent, Food, etc." class="form-input sm"/>
+            </div>
+            <button class="btn-primary sm" onclick="doTransfer()">Send Money →</button>
+            <div id="transfer-msg" class="msg-box sm"></div>
+          </div>
+
+          <!-- Account info -->
+          <div class="account-info-widget">
+            <h3>Your Account</h3>
+            <div class="info-row"><span>Account No:</span><strong id="widget-acc-no">--</strong></div>
+            <div class="info-row"><span>Type:</span><strong id="widget-acc-type">--</strong></div>
+            <div class="info-row"><span>Status:</span><strong class="status-active">● Active</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ HISTORY PAGE ═══════════ -->
+  <section class="page hidden" id="history-page">
+    <div class="dashboard-wrap">
+      <div class="dashboard-top">
+        <div class="greeting">
+          <h2>Transaction History</h2>
+          <p>All your transactions</p>
+        </div>
+        <button class="action-chip" onclick="showDashboard()">← Back to Dashboard</button>
+      </div>
+      <div class="transactions-panel full-width">
+        <div class="panel-header">
+          <h3>All Transactions</h3>
+          <span id="txn-count" class="link-subtle"></span>
+        </div>
+        <div id="history-list" class="txn-list">
+          <div class="txn-loading">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
