@@ -101,6 +101,10 @@ pipeline {
                     script {
                         def tag = "${DH_USER}/${IMAGE_FRONTEND}:${IMAGE_TAG}"
                         def tagLatest = "${DH_USER}/${IMAGE_FRONTEND}:latest"
+                        echo "================ DEBUG ================"
+                        echo "DH_USER = ${DH_USER}"
+                        echo "TAG = ${tag}"
+                        echo "TAG_LATEST = ${tagLatest}"
 
                         // Build Frontend
                         sh """
