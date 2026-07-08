@@ -131,9 +131,7 @@ pipeline {
 
         // ── Stage 5: Security Scan (only on main) ──────────────────
         stage('Security Scan') {
-            when {
-                anyOf { branch 'main'; branch 'master' }
-            }
+    
             steps {
                 sh '''
                     # Install trivy if not present
@@ -148,9 +146,7 @@ pipeline {
 
         // ── Stage 6: Push to Docker Hub ────────────────────────────
         stage('Docker Push') {
-            when {
-                anyOf { branch 'main'; branch 'master'; branch 'release/*' }
-            }
+            
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: DOCKERHUB_CREDS,
