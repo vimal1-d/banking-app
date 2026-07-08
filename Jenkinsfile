@@ -165,9 +165,7 @@ pipeline {
 
         // ── Stage 7: Deploy to Kubernetes ──────────────────────────
         stage('Deploy to K8s') {
-            when {
-                anyOf { branch 'main'; branch 'master' }
-            }
+            
             steps {
                 withCredentials([
             
@@ -216,11 +214,9 @@ pipeline {
 
         // ── Stage 8: Smoke Test ────────────────────────────────────
         stage('Smoke Test') {
-            when {
-                anyOf { branch 'main'; branch 'master' }
-            }
+            
             steps {
-                withCredentials([file(credentialsId: KUBECONFIG_CREDS, variable: 'KUBECONFIG')]) {
+                 
                     sh """
                         echo "⏳ Waiting for pods to be ready..."
                         sleep 15
