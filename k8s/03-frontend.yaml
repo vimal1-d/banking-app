@@ -73,7 +73,7 @@ spec:
       containers:
         - name: frontend
           # ← Jenkins will update this tag automatically
-          image: YOURDOCKERHUBUSER/banking-frontend:latest
+          image: vikaskumar12/banking-frontend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80

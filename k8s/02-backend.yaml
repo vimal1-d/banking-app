@@ -34,7 +34,7 @@ spec:
       containers:
         - name: backend
           # ← Jenkins will update this tag automatically
-          image: YOURDOCKERHUBUSER/banking-backend:latest
+          image: vikaskumar12/banking-backend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 5000
