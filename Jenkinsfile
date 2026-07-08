@@ -134,11 +134,6 @@ pipeline {
     
             steps {
                 sh '''
-                    # Install trivy if not present
-                    if ! command -v trivy &> /dev/null; then
-                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-                          | sh -s -- -b /usr/local/bin
-                    fi
                     trivy fs --exit-code 0 --severity HIGH,CRITICAL ./backend || true
                 '''
             }
