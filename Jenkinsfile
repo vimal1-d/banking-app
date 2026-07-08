@@ -170,7 +170,7 @@ pipeline {
             }
             steps {
                 withCredentials([
-                    file(credentialsId: KUBECONFIG_CREDS, variable: 'KUBECONFIG'),
+            
                     usernamePassword(
                         credentialsId: DOCKERHUB_CREDS,
                         usernameVariable: 'DH_USER',
@@ -186,7 +186,7 @@ pipeline {
                         kubectl apply -f k8s/01-mongodb.yaml
 
                         # Apply backend (secure version)
-                        kubectl apply -f k8s/02-backend-secure.yaml
+                        kubectl apply -f k8s/02-backend.yaml
 
                         # Apply frontend
                         kubectl apply -f k8s/03-frontend.yaml
