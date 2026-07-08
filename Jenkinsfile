@@ -65,10 +65,10 @@ pipeline {
                     sh '''
                         if [ -f package-lock.json ]; then
                             echo "Lock file found — using npm ci"
-                            npm ci --omit=dev
+                            npm ci 
                         else
                             echo "No lock file — using npm install"
-                            npm install --omit=dev
+                            npm install 
                         fi
                     '''
                 }
