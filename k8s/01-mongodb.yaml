@@ -72,11 +72,17 @@ spec:
           # FIXED: use env directly, no envFrom (avoids conflict)
           env:
             - name: MONGO_INITDB_ROOT_USERNAME
-              value: "admin"
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: MONGO_ROOT_USER
             - name: MONGO_INITDB_ROOT_PASSWORD
-              value: "changeme-in-production"   # ← Run generate-secrets.sh instead
-            - name: MONGO_INITDB_DATABASE
-              value: "bankingdb"
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: MONGO_ROOT_PASS
+            - name: MONGO_INITDB_DATABASE  
+              value: "bankingdb"            
           volumeMounts:
             - name: mongo-data
               mountPath: /data/db
